@@ -152,6 +152,9 @@
   <ItemGroup>
     <ClCompile Include="Add_DllLoader.cpp" />
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ADD_Dll\Debug\ADD_Dll.dll" />
+  </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
   </ImportGroup>

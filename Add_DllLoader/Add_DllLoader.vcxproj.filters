@@ -19,4 +19,9 @@
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
+  <ItemGroup>
+    <None Include="..\ADD_Dll\Debug\ADD_Dll.dll">
+      <Filter>源文件</Filter>
+    </None>
+  </ItemGroup>
 </Project>
