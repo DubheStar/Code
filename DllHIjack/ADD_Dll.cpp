@@ -112,7 +112,7 @@ using namespace AheadLib;
 
 VOID Hijack()
 {
-	MessageBoxW(NULL, L"DLL Hijack! by 金灯大剑夏隋良", L"你被劫持啦！", 0);
+	MessageBoxW(NULL, L"DLL Hijack! by DubheStar", L"你被劫持啦！", 0);
 }
 
 ////////////////////////////////////////////////////////////////////////////////////////////////////////////////////////
