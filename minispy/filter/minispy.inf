@@ -91,7 +91,7 @@ minispy.exe = 1,,
 ;;
 
 [Strings]
-ProviderString          = "TODO-Set-Provider"
+ProviderString          = "Dubhe"
 ServiceDescription      = "Minispy mini-filter driver"
 ServiceName             = "Minispy"
 DriverName              = "minispy"
