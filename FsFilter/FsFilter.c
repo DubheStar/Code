@@ -133,6 +133,29 @@ EXTERN_C_END
 //
 
 CONST FLT_OPERATION_REGISTRATION Callbacks[] = {
+	{ IRP_MJ_CREATE,
+	  0,
+	  FsFilterPreOperation,
+	  FsFilterPostOperation },
+	{ IRP_MJ_READ,
+	  0,
+	  FsFilterPreOperation,
+	  FsFilterPostOperation },
+
+	{ IRP_MJ_WRITE,
+	  0,
+	  FsFilterPreOperation,
+	  FsFilterPostOperation },
+
+	{ IRP_MJ_QUERY_INFORMATION,
+	  0,
+	  FsFilterPreOperation,
+	  FsFilterPostOperation },
+
+	{ IRP_MJ_SET_INFORMATION,
+	  0,
+	  FsFilterPreOperation,
+	  FsFilterPostOperation },
 
 #if 0 // TODO - List all of the requests to filter.
     { IRP_MJ_CREATE,
