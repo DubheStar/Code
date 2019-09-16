@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{52FF8EF0-943B-4994-AF7D-AF6A3B6C7D9B}</ProjectGuid>
+    <ProjectGuid>{C6225B2E-61F5-4D6C-B961-DC205FD50401}</ProjectGuid>
     <Keyword>MFCProj</Keyword>
-    <RootNamespace>KeyBoardSimulator</RootNamespace>
+    <RootNamespace>UserMsgClient</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -170,6 +170,7 @@
       <SDLCheck>true</SDLCheck>
       <PreprocessorDefinitions>_WINDOWS;NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <PrecompiledHeaderFile>pch.h</PrecompiledHeaderFile>
+      <BrowseInformation>true</BrowseInformation>
     </ClCompile>
     <Link>
       <SubSystem>Windows</SubSystem>
@@ -186,33 +187,36 @@
       <PreprocessorDefinitions>NDEBUG;%(PreprocessorDefinitions)</PreprocessorDefinitions>
       <AdditionalIncludeDirectories>$(IntDir);%(AdditionalIncludeDirectories)</AdditionalIncludeDirectories>
     </ResourceCompile>
+    <Bscmake>
+      <PreserveSbr>true</PreserveSbr>
+    </Bscmake>
   </ItemDefinitionGroup>
   <ItemGroup>
     <ClInclude Include="framework.h" />
-    <ClInclude Include="KeyBoardSimulator.h" />
-    <ClInclude Include="KeyBoardSimulatorDlg.h" />
     <ClInclude Include="pch.h" />
     <ClInclude Include="Resource.h" />
     <ClInclude Include="targetver.h" />
+    <ClInclude Include="UserMsgClient.h" />
+    <ClInclude Include="UserMsgClientDlg.h" />
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="KeyBoardSimulator.cpp" />
-    <ClCompile Include="KeyBoardSimulatorDlg.cpp" />
     <ClCompile Include="pch.cpp">
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Debug|x64'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|Win32'">Create</PrecompiledHeader>
       <PrecompiledHeader Condition="'$(Configuration)|$(Platform)'=='Release|x64'">Create</PrecompiledHeader>
     </ClCompile>
+    <ClCompile Include="UserMsgClient.cpp" />
+    <ClCompile Include="UserMsgClientDlg.cpp" />
   </ItemGroup>
   <ItemGroup>
-    <ResourceCompile Include="KeyBoardSimulator.rc" />
+    <ResourceCompile Include="UserMsgClient.rc" />
   </ItemGroup>
   <ItemGroup>
-    <None Include="res\KeyBoardSimulator.rc2" />
+    <None Include="res\UserMsgClient.rc2" />
   </ItemGroup>
   <ItemGroup>
-    <Image Include="res\KeyBoardSimulator.ico" />
+    <Image Include="res\UserMsgClient.ico" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">
