@@ -28,12 +28,14 @@ void CWMCPDATACDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
 	DDX_Text(pDX, IDC_EDIT1, m_strSendText);
+	DDX_Control(pDX, IDC_LIST1, m_strRecv);
 }
 
 BEGIN_MESSAGE_MAP(CWMCPDATACDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_BN_CLICKED(IDOK, &CWMCPDATACDlg::OnBnClickedOk)
+	ON_WM_COPYDATA()
 END_MESSAGE_MAP()
 
 
@@ -94,23 +96,29 @@ HCURSOR CWMCPDATACDlg::OnQueryDragIcon()
 void CWMCPDATACDlg::OnBnClickedOk()
 {
 	// TODO: 在此添加控件通知处理程序代码
-	HWND hWnd = ::FindWindow(NULL, _T("WMCPDATAC"));
-
+	UpdateData(1);
+	HWND hWnd = ::FindWindow(NULL, _T("WMCPDATAS"));
 	COPYDATASTRUCT cds;
 	cds.dwData = 0;
 	cds.cbData = m_strSendText.GetLength() + 1;
 	cds.lpData = m_strSendText.GetBuffer(cds.cbData);
 
-	::SendMessage(hWnd, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)& cds);
+	::SendMessage(hWnd, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
+
 }
 
 
 
-bool CWMCPDATACDlg::OnCopyData(CWnd* pWnd, COPYDATASTRUCT *pCopyDataStruct)
+
+
+
+BOOL CWMCPDATACDlg::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCopyDataStruct)
 {
-	// TODO: 在此处添加实现代码.
-	m_strRecv.Format(_T("服务端在[%d]接收到消息"), pCopyDataStruct->lpData);
+	// TODO: 在此添加消息处理程序代码和/或调用默认值
+	CString strRecvText;
+	strRecvText.Format(_T("服务端在[%s]接收到消息"), pCopyDataStruct->lpData);
 
-	m_strRecv.AddString(m_strRecv);
-	return false;
+	m_strRecv.AddString(strRecvText);
+	return CDialog::OnCopyData(pWnd, pCopyDataStruct);
 }
+

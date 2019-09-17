@@ -33,5 +33,6 @@ protected:
 public:
 	afx_msg void OnBnClickedOk();
 	CString m_strSendText;
-	bool OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCopyDataStruct);
+	CListBox m_strRecv;
+	afx_msg BOOL OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCopyDataStruct);
 };

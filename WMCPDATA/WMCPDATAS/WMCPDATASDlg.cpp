@@ -26,12 +26,14 @@ CWMCPDATASDlg::CWMCPDATASDlg(CWnd* pParent /*=nullptr*/)
 void CWMCPDATASDlg::DoDataExchange(CDataExchange* pDX)
 {
 	CDialogEx::DoDataExchange(pDX);
+	DDX_Control(pDX, IDC_LIST1, m_strServerRecv);
 }
 
 BEGIN_MESSAGE_MAP(CWMCPDATASDlg, CDialogEx)
 	ON_WM_PAINT()
 	ON_WM_QUERYDRAGICON()
 	ON_WM_COPYDATA()
+	ON_BN_CLICKED(IDC_DELALL, &CWMCPDATASDlg::OnBnClickedDelall)
 END_MESSAGE_MAP()
 
 
@@ -92,11 +94,39 @@ HCURSOR CWMCPDATASDlg::OnQueryDragIcon()
 BOOL CWMCPDATASDlg::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCopyDataStruct)
 {
 	// TODO: 在此添加消息处理程序代码和/或调用默认值
-	if (pCopyDataStruct->cbData > 0)
-	{
-		char recvData[256] = { 0 };
-		strncpy(recvData, (char*)pCopyDataStruct->lpData, pCopyDataStruct->cbData);
-		UpdateData(FALSE);
-	}
+	CString strRecvText;
+
+	DWORD dwPid = 0;
+	::GetWindowThreadProcessId(pWnd->m_hWnd, &dwPid);
+
+	strRecvText.Format(_T("PID = [%d]的进程发来的消息：%s"), dwPid, pCopyDataStruct->lpData);
+	m_strServerRecv.AddString(strRecvText);
+
+	//获取本地时间
+	SYSTEMTIME st;
+	GetLocalTime(&st);
+	
+	CString strTime;
+	strTime.Format(_T("%02d:%02d:%02d"), st.wHour, st.wMinute, st.wSecond);
+	
+	COPYDATASTRUCT cds;
+	cds.dwData = 0;
+	cds.cbData = strTime.GetLength() + 1;
+	cds.lpData = strTime.GetBuffer(cds.cbData);
+
+	::SendMessage(pWnd->m_hWnd, WM_COPYDATA, NULL, (LPARAM)& cds);
+
 	return CDialogEx::OnCopyData(pWnd, pCopyDataStruct);
+}
+
+
+
+
+void CWMCPDATASDlg::OnBnClickedDelall()
+{
+	// TODO: 在此添加控件通知处理程序代码
+	while (m_strServerRecv.GetCount())
+	{
+		m_strServerRecv.DeleteString(0);
+	}
 }

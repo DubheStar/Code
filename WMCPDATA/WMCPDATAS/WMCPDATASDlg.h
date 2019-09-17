@@ -32,4 +32,7 @@ protected:
 	DECLARE_MESSAGE_MAP()
 public:
 	afx_msg BOOL OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCopyDataStruct);
+	CListBox m_strServerRecv;
+	afx_msg void OnLbnSelchangeList1();
+	afx_msg void OnBnClickedDelall();
 };
