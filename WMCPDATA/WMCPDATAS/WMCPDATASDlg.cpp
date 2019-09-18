@@ -111,7 +111,7 @@ BOOL CWMCPDATASDlg::OnCopyData(CWnd* pWnd, COPYDATASTRUCT* pCopyDataStruct)
 	
 	COPYDATASTRUCT cds;
 	cds.dwData = 0;
-	cds.cbData = strTime.GetLength() + 1;
+	cds.cbData = (strTime.GetLength() + 1) * sizeof(TCHAR);
 	cds.lpData = strTime.GetBuffer(cds.cbData);
 
 	::SendMessage(pWnd->m_hWnd, WM_COPYDATA, NULL, (LPARAM)& cds);

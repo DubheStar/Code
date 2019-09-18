@@ -100,7 +100,7 @@ void CWMCPDATACDlg::OnBnClickedOk()
 	HWND hWnd = ::FindWindow(NULL, _T("WMCPDATAS"));
 	COPYDATASTRUCT cds;
 	cds.dwData = 0;
-	cds.cbData = m_strSendText.GetLength() + 1;
+	cds.cbData = (m_strSendText.GetLength() + 1) * sizeof(TCHAR);//计算Unicode模式下的宽字符数，否则出现乱码或者截断字符串
 	cds.lpData = m_strSendText.GetBuffer(cds.cbData);
 
 	::SendMessage(hWnd, WM_COPYDATA, (WPARAM)m_hWnd, (LPARAM)&cds);
