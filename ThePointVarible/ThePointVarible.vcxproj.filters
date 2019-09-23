@@ -20,7 +20,7 @@
     </ClCompile>
   </ItemGroup>
   <ItemGroup>
-    <ClInclude Include="PointVarible.h">
+    <ClInclude Include="ThePointVarible.h">
       <Filter>头文件</Filter>
     </ClInclude>
   </ItemGroup>
