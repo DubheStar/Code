@@ -34,7 +34,16 @@ void CScanner::Addip(char * szIP)
 				szEndIP = szIP + i + 1;
 			}
 		}
-		
+
+		for (unsigned int i = 0; i < strlen(szIP); i++)
+		{
+			if (szIP[i] == '-')
+			{
+				szIP[i] = '\0';
+				szStartIP = szIP;
+			}
+		}
+
 		if (dLocaltion != 1)
 		{
 			std::cout << "IP段非法，请重新输入IP或IP段！" << std::endl;
@@ -72,20 +81,65 @@ void CScanner::Addip(ULONG addr)
 	m_list.push_back(tmp);
 }
 
-void CScanner::AddPort(unsigned int nPort)
+
+
+void CScanner::AddPort(char* szPort)
 {
-	UnitIter iter =m_list.begin();
-	for (; iter != m_list.end(); iter++) 
+	if(strstr(szPort, "-"))
 	{
-		pScanUnit tmp = *iter;
-		tmp->scanPortList.push_back(nPort);
+		char* szStartPort = szPort;
+		char* szEndPort = szPort;
+		DWORD dLocaltion = 0;
+		//利用指针截取结束IP
+		for (unsigned int i = 0; i < strlen(szPort); i++)
+		{
+			if (szPort[i] == '-')
+			{
+				dLocaltion++;
+				szEndPort = szPort + i + 1;
+			}
+		}
+
+		for (unsigned int i = 0; i < strlen(szPort); i++)
+		{
+			if (szPort[i] == '-')
+			{
+				szPort[i] = '\0';
+				szStartPort = szPort;
+			}
+		}
+		if (dLocaltion != 1)
+		{
+			std::cout << "端口或端口段非法，请重新输入端口或段！" << std::endl;
+			return;
+		}
+
+		DWORD dstart = atoi(szStartPort);
+		DWORD dend = atoi(szEndPort);
+
+		if (dend <= dstart)
+		{
+			return;
+		}
+		for (DWORD i = dstart; i <= dend; i++)
+		{
+			AddPort(i);
+		}
+		return;
+	}
+	else
+	{
+		return AddPort(atoi(szPort));
 	}
 }
 
-void CScanner::AddPort(unsigned int nStartPort, unsigned int nEndPort)
+void CScanner::AddPort(int nPort)
 {
-	for (unsigned int i = nStartPort; i <= nEndPort; i++) {
-		AddPort(i);
+	UnitIter iter = m_list.begin();
+	for (; iter != m_list.end(); iter++)
+	{
+		pScanUnit tmp = *iter;
+		tmp->scanPortList.push_back(nPort);
 	}
 }
 

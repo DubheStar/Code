@@ -22,8 +22,8 @@ public:
 	~CScanner(); //析构函数
 	void Addip(char * szIP);//添加ip函数，第一次初步处理与合法性验证,然后调用重载函数
 	void Addip(ULONG addr);//写入ip地址到ScanUnit
-	void AddPort(unsigned int nPort);//单一端口添加
-	void AddPort(unsigned int nStartPort, unsigned int nEndPort);//多个端口添加
+	void AddPort(char* szPort);//多个端口添加
+	void AddPort(int nPort);//单一端口添加
 	bool Start();//开始扫描
 	void PrintfResult();//输出筛选后的扫描结果
 
