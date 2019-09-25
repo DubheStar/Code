@@ -1,6 +1,6 @@
 #include <iostream>
 #include "Scanner.h"
-
+#define INET_ADDRLEN 20
 
 CScanner::CScanner()
 {
@@ -51,8 +51,12 @@ void CScanner::Addip(char * szIP)
 		}
 
 		//解析IP地址字符串成IN_ADDR格式
-		DWORD start = htonl(inet_addr(szStartIP));
-		DWORD end = htonl(inet_addr(szEndIP));
+		char strStartIp[16];
+		char strEndIP[16];
+		//DWORD start = htonl(inet_addr(szStartIP));
+		DWORD start = inet_pton(AF_INET, szStartIP, &strStartIp);
+		//DWORD end = htonl(inet_addr(szEndIP));
+		DWORD end = inet_pton(AF_INET, szEndIP, &strStartIp);
 
 		if (end <= start) 
 		{
@@ -66,7 +70,9 @@ void CScanner::Addip(char * szIP)
 	}
 	else
 	{
-		return Addip(inet_addr(szIP));
+		char strAddip[16];
+		inet_pton(AF_INET, szIP, &strAddip);
+		return Addip(strAddip);
 	}
 }
 
@@ -158,6 +164,9 @@ void CScanner::PrintfResult()
 	for (; iter != m_list.end(); iter++) {
 		pScanUnit tmp = *iter;
 		char * szIp = inet_ntoa(*(IN_ADDR *)&tmp->addr);
+		//char* szIp[30];
+		//inet_ntop(AF_INET, (*(IN_ADDR*)&tmp->addr) , &szIp, INET_ADDRLEN);
+
 		list<unsigned int>::iterator portIter = tmp->openPortList.begin();
 		for (; portIter != tmp->openPortList.end(); portIter++) {
 			//std::cout << szIp << ":" << (int)*portIter << std::endl;
