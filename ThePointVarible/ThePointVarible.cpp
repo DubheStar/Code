@@ -6,20 +6,26 @@
 int _tmain(int argc,_TCHAR* argv[])
 {
 	int a = 5, b = 9;
-	int* pa=&a, * pb=&b;
 	swap_value(a, b);
 	std::cout << "a:" << a << "\t" << "b:" << b << std::endl;
-	swap_point(pa, pb);
+	swap_point(&a, &b);
 	std::cout << "a:" << a << "\t" << "b:" << b << std::endl;
  	swap_reference(a, b);
 	std::cout << "a:" << a << "\t" << "b:" << b << std::endl;
 }
 
-void swap_point(int* pa, int* pb)
+void swap_value(int a, int b)
 {
-	int ptemp = *pa;
-	*pa = *pb;
-	*pb = ptemp;
+	int temp = a;
+	a = b;
+	b = temp;
+}
+
+void swap_point(int* a, int* b)
+{
+	int ptemp = *a;
+	*a = *b;
+	*b = ptemp;
 }
 
 void swap_reference(int& c, int& d)
@@ -29,9 +35,3 @@ void swap_reference(int& c, int& d)
 	d = ptemp;
 }
 
-void swap_value(int a, int b)
-{
-	int temp = a;
-	a = b;
-	b = temp;
-}
