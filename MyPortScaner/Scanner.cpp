@@ -99,7 +99,7 @@ void CScanner::AddPort(char* szPort)
 				szEndPort = szPort + i + 1;
 			}
 		}
-
+		//将“-”置换得到起始IP
 		for (unsigned int i = 0; i < strlen(szPort); i++)
 		{
 			if (szPort[i] == '-')
@@ -160,10 +160,9 @@ void CScanner::PrintfResult()
 		char * szIp = inet_ntoa(*(IN_ADDR *)&tmp->addr);
 		list<unsigned int>::iterator portIter = tmp->openPortList.begin();
 		for (; portIter != tmp->openPortList.end(); portIter++) {
-			std::cout << szIp << ":" << (int)*portIter << std::endl;
+			//std::cout << szIp << ":" << (int)*portIter << std::endl;
 		}
 	}
-	SetConsoleTextAttribute(hConsole, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
 }
 
 DWORD WINAPI CScanner::ScanProc(LPARAM LParam)
@@ -184,7 +183,7 @@ DWORD WINAPI CScanner::ScanProc(LPARAM LParam)
 		for (; portIter != tmp->scanPortList.end(); portIter++) 
 		{
 			unsigned int nPort = *portIter;
-			printf("开始尝试 %s:%d\n", szIP, nPort);
+			//std::cout << "开始扫描" << szIP << "的端口" << nPort << std::endl;
 			sTest = socket(AF_INET, SOCK_STREAM, IPPROTO_TCP);
 			if (sTest < 0) {
 				WSACleanup();
@@ -221,10 +220,11 @@ DWORD WINAPI CScanner::ScanProc(LPARAM LParam)
  			timeout.tv_usec = 20000;
  			nRet = select(1, 0, &fd, 0, &timeout);
 			if (nRet<=0) {
-				printf("%s:%d 未开放\n", szIP, nPort);
+				//std::cout << szIP << "的端口" <<  nPort << "没有开放" << std::endl;
 			}
 			else {
 				SetConsoleTextAttribute(pThis->hConsole, FOREGROUND_RED);
+				//std::cout << szIP << ":" << nPort << "开放" <<std::endl;
 				printf("%s:%d 开放\n", szIP, nPort);
 				tmp->openPortList.push_back(nPort);
 				SetConsoleTextAttribute(pThis->hConsole, FOREGROUND_BLUE | FOREGROUND_GREEN | FOREGROUND_RED);
