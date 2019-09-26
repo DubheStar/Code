@@ -70,9 +70,7 @@ void CScanner::Addip(char * szIP)
 	}
 	else
 	{
-		char strAddip[16];
-		inet_pton(AF_INET, szIP, &strAddip);
-		return Addip(strAddip);
+		return Addip(inet_addr(szIP));
 	}
 }
 
