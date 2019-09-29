@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{53F795BB-614B-46AE-90A1-5F5BEAAA0DF8}</ProjectGuid>
+    <ProjectGuid>{ED1DDD1B-ABF9-4268-8FA5-FF8C47092335}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>PointSize</RootNamespace>
+    <RootNamespace>FileOperation</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -151,7 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Point_Size.cpp" />
+    <ClCompile Include="File_Operation.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

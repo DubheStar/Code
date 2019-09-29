@@ -20,9 +20,9 @@
   </ItemGroup>
   <PropertyGroup Label="Globals">
     <VCProjectVersion>16.0</VCProjectVersion>
-    <ProjectGuid>{34444056-B949-429D-AF41-2FFCB21367B7}</ProjectGuid>
+    <ProjectGuid>{8D04B18C-9ED0-4E4D-952B-48AC8CDA1D48}</ProjectGuid>
     <Keyword>Win32Proj</Keyword>
-    <RootNamespace>PointArray</RootNamespace>
+    <RootNamespace>FileOperationWriteOneByOneLine</RootNamespace>
     <WindowsTargetPlatformVersion>10.0</WindowsTargetPlatformVersion>
   </PropertyGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.Default.props" />
@@ -151,7 +151,7 @@
     </Link>
   </ItemDefinitionGroup>
   <ItemGroup>
-    <ClCompile Include="Point_Array.cpp" />
+    <ClCompile Include="File_Operation_Write_One_By_One_Line.cpp" />
   </ItemGroup>
   <Import Project="$(VCTargetsPath)\Microsoft.Cpp.targets" />
   <ImportGroup Label="ExtensionTargets">

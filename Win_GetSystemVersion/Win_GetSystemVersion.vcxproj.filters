@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Point_Size.cpp">
+    <ClCompile Include="Win_GetSystemVersion.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
