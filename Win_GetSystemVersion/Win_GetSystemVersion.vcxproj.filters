@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Win_GetSystemVersion.cpp">
+    <ClCompile Include="Win_GetSystemVersion.c">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
