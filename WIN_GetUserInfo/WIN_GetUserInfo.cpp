@@ -8,14 +8,15 @@
 #include <LM.h>
 #include <assert.h>
 #include <string.h>
-
+#include <string>
+#include <wchar.h>
 //隐藏账号检测
 
 
 int main()
 {
-	LPUSER_INFO_4 pBuf = NULL;
-	LPUSER_INFO_4 pTmpBuf;
+	LPUSER_INFO_0 pBuf = NULL;
+	LPUSER_INFO_0 pTmpBuf;
 	DWORD dwLevel = 0;
 	DWORD dwPrefMaxLen = MAX_PREFERRED_LENGTH;
 	DWORD dwEntriesRead = 0;
@@ -42,6 +43,7 @@ int main()
 			//
 			// Loop through the entries.
 			//
+			std::cout << "共有账号：\n";
 			for (i = 0; (i < dwEntriesRead); i++)
 			{
 				assert(pTmpBuf != NULL);
@@ -51,11 +53,21 @@ int main()
 					fprintf(stderr, "An access violation has occurred\n");
 					break;
 				}
-				//
-				//  Print the name of the user account.
-				//
-				wprintf(L"-- %s\n", pTmpBuf->usri4_name);
 
+				LPWSTR szUsername = (pTmpBuf->usri0_name);
+				
+				const WCHAR* fuhao = L"$";
+				if (wcsstr(pTmpBuf->usri0_name, fuhao))
+				{
+					std::wstring wUsernamestr(szUsername);
+					std::wcout << dwTotalCount + 1 << "." << wUsernamestr;
+					std::wcout << "(隐藏账号)\n";
+				}
+				else
+				{
+					std::wstring wUsernamestr(szUsername);
+					std::wcout << dwTotalCount + 1 << "." << wUsernamestr << "\n";
+				}
 				pTmpBuf++;
 				dwTotalCount++;
 			}
@@ -84,8 +96,8 @@ int main()
 	//
 	// Print the final count of users enumerated.
 	//
-	fprintf(stderr, "\nTotal of %d entries enumerated\n", dwTotalCount);
-
+	fprintf(stderr, "%d个\n", dwTotalCount);
+	system("PAUSE");
 	return 0;
 
 }
