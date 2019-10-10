@@ -2,7 +2,7 @@
 #define UNICODE
 #endif
 #pragma comment(lib,"netapi32.lib")
-#define _CRT_SECURE_NO_WARNINGS
+#pragma comment(lib,"Advapi32.lib")
 #include <iostream>
 #include <Windows.h>
 #include <LM.h>
@@ -11,6 +11,7 @@
 #include <string>
 #include <wchar.h>
 #include <time.h>
+#include <sddl.h>
 //隐藏账号检测
 
 char* filetimeToString(FILETIME FileTime, char* str, unsigned int string_size)
@@ -33,80 +34,23 @@ char* timeToString(DWORD t, char* str, unsigned int string_size)
 	return str;
 }
 
-void SidtoUser(PSID psid, char* user, char* rid, char* sid, unsigned int max_size)
+bool user2sid(LPWSTR csUsername, PSID Sid)
 {
-	if (psid == NULL) return;
-	if (IsValidSid(psid))
+	UCHAR buffer2[2048];
+	UCHAR buffer3[4];
+	DWORD length = 900;
+	LPCTSTR lpAccountName = csUsername;
+	LPDWORD cbSid = &length;
+	LPTSTR ReferencedDomainName = (LPTSTR)buffer2;
+	LPDWORD cbReferencedDomainName = &length;
+	PSID_NAME_USE peUse = (PSID_NAME_USE)buffer3;
+	if (LookupAccountName(NULL, lpAccountName, Sid, cbSid,
+		ReferencedDomainName, cbReferencedDomainName,
+		peUse))
 	{
-		DWORD saccount = 0;
-		char* account = NULL;
-		DWORD sdomain = 0;
-		char* domain = NULL;
-		SID_NAME_USE snu;
-
-		LookupAccountSid(NULL, psid, (LPWSTR)account, &saccount, (LPWSTR)domain, &sdomain, &snu);
-		if (!saccount || !sdomain) return;
-		account = (LPSTR)HeapAlloc(GetProcessHeap(), 0, saccount);
-		domain = (LPSTR)HeapAlloc(GetProcessHeap(), 0, sdomain);
-
-		if (!account || !domain) return;
-		account[0] = 0; domain[0] = 0;
-
-		if (LookupAccountSid(NULL, psid, (LPWSTR)account, &saccount, (LPWSTR)domain, &sdomain, &snu))
-		{
-			//user
-			if (user != NULL && domain[0] != 0 && account[0] != 0 && saccount && sdomain)snprintf(user, max_size, "%s\\%s ", domain, account);
-			else user[0] = 0;
-
-			//rid
-			PSID_IDENTIFIER_AUTHORITY t = GetSidIdentifierAuthority(psid);
-			PUCHAR pcSubAuth = GetSidSubAuthorityCount(psid);
-			DWORD* SidP;
-
-			unsigned char i, ucMax = *pcSubAuth;
-			if (ucMax > 2)
-			{
-				SidP = GetSidSubAuthority(psid, ucMax - 1);
-				if (*SidP < 65535) snprintf(rid, max_size, "%05lu", *SidP);
-				else rid[0] = 0;
-			}
-			else rid[0] = 0;
-
-			//sid
-			char tmp[MAX_PATH];
-			snprintf(sid, MAX_PATH, "S-%d-%u", ((SID*)psid)->Revision, t->Value[5] + (t->Value[4] << 8) + (t->Value[3] << 16) + (t->Value[2] << 24));
-
-			//sid
-			for (i = 0; i < ucMax; ++i)
-			{
-				SidP = GetSidSubAuthority(psid, i);
-				strncpy(tmp, sid, MAX_PATH);
-				snprintf(sid, max_size, "%s-%lu", tmp, *SidP);
-			}
-		}
-
-		HeapFree(GetProcessHeap(), 0, account);
-		HeapFree(GetProcessHeap(), 0, domain);
+		return 1;
 	}
-}
-
-void GetSIDFromUser(char* user, char* rid, char* sid, unsigned int max_size)
-{
-	BYTE BSid[MAX_PATH];
-	PSID psid = (PSID)BSid;
-	DWORD sid_size = MAX_PATH;
-	SID_NAME_USE TypeSid;
-
-	char domain[MAX_PATH];
-	DWORD domain_size = MAX_PATH;
-
-	if (LookupAccountName(NULL, (LPCTSTR)user, psid, (LPDWORD)&sid_size, (LPTSTR)domain, (LPDWORD)&domain_size, (PSID_NAME_USE)&TypeSid))
-	{
-		if (IsValidSid(psid))
-		{
-			SidtoUser(psid, user, rid, sid, max_size);
-		}
-	}
+	return 0;
 }
 
 
@@ -170,29 +114,14 @@ int main()
 				//权限码
 				std::cout << "账号权限码:" << pTmpBuf->usri2_priv << std::endl;
 				//SID
-				BYTE BSid[MAX_PATH];
-				PSID psid = (PSID)BSid;
-				DWORD sid_size = MAX_PATH;
-				SID_NAME_USE TypeSid;
-				char domain[MAX_PATH];
-				DWORD domain_size = MAX_PATH;
+				PSID sidUser;
+				UCHAR buffer1[2048];
+				sidUser = buffer1;
+				WCHAR* sid;
 
-				char name[MAX_PATH], RID[MAX_PATH], SID[MAX_PATH], group[MAX_PATH], type[MAX_PATH],
-					description[MAX_PATH];
-
-				DWORD nb_connexion, state_id;
-				name[0] = 0;
-				RID[0] = 0;
-				SID[0] = 0;
-				group[0] = 0;
-				description[0] = 0;
-				nb_connexion = 0;
-				state_id = 0;
-				type[0] = 0;
-
-				GetSIDFromUser(name, RID, SID, MAX_PATH);
-
- 				std::cout << "SID:\n" <<RID<<SID<< std::endl;
+				user2sid(pTmpBuf->usri2_name, sidUser);
+				ConvertSidToStringSid(sidUser, &sid);
+ 				std::wcout << "SID:" <<sid << std::endl;
 				//时间戳
 				char strTime[128] = { 0 };
 				timeToString(pTmpBuf->usri2_last_logon, strTime, sizeof(strTime));
