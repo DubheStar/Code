@@ -19,7 +19,6 @@
 
 VOID Account_Class(DWORD UserPriv)
 {
-	char* type;
 	switch (UserPriv)
 	{
 	case 0:printf("GUEST"); break;
@@ -29,26 +28,6 @@ VOID Account_Class(DWORD UserPriv)
 	}
 }
 
-
-
-
-int RegSAMQuery()
-{
-	DWORD Data;
-	DWORD DataSize = TOTALBYTES;
-
-	PPERF_DATA_BLOCK PerfData = (PPERF_DATA_BLOCK)malloc(DataSize);
-	lRet = RegQueryValueEx(hKey, _T("SS"), 0, NULL, (LPBYTE)PerfData, &DataSize);
-	if (ERROR_SUCCESS != lRet)
-	{
-		std::cout << "RegQueryValueEX Fail:" << lRet << std::endl;
-	}
-	else
-	{
-		std::cout << "查询注册表键值为：" << &PerfData << std::endl;
-	}
-	return 0;
-}
 
 int main()
 {
@@ -151,21 +130,21 @@ int main()
 				WCHAR SubKey[200] = L"SAM\\SAM\\Domains\\Account\\Users\\00000";
 				wcscat_s(SubKey, whexsid);
 				HKEY hKey;
-				int lRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SubKey, 0, KEY_ALL_ACCESS, &hKey);
+				int lRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SubKey, 0, KEY_WOW64_64KEY | KEY_READ, &hKey);
 				if (lRet == ERROR_SUCCESS)
 				{
-					DWORD Data;
 					DWORD DataSize = 8192;
-
-					PPERF_DATA_BLOCK PerfData = (PPERF_DATA_BLOCK)malloc(DataSize);
-					lRet = RegQueryValueEx(hKey, L"SS", 0, NULL, (LPBYTE)PerfData, &DataSize);
+					BYTE value[256] = { 0 };
+					//PPERF_DATA_BLOCK PerfData = (PPERF_DATA_BLOCK)malloc(DataSize);
+					lRet = RegQueryValueExW(hKey, L"F", 0, NULL, (LPBYTE)value, &DataSize);
 					if (ERROR_SUCCESS != lRet)
 					{
-						std::cout << "RegQueryValueEX Fail:" << lRet << std::endl;
+						std::cout << "请使用管理员权限打开!(" << lRet << std::endl;
+						break;
 					}
 					else
 					{
-						std::cout << "查询注册表键值为：" << &PerfData << std::endl;
+						std::cout << "查询注册表键值为：" << &value << std::endl;
 					}
 				}
 				//时间戳
