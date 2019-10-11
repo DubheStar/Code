@@ -12,48 +12,43 @@
 #include <wchar.h>
 #include <time.h>
 #include <sddl.h>
+
+#include "DwordTimetoString.h" 
+#include "User2Sid.h"
 //隐藏账号检测
 
-char* filetimeToString(FILETIME FileTime, char* str, unsigned int string_size)
+VOID Account_Class(DWORD UserPriv)
 {
-	str[0] = 0;
-	SYSTEMTIME SysTime;
-	if (FileTimeToSystemTime(&FileTime, &SysTime) != 0)
-		snprintf(str, string_size, "%02d/%02d/%02d %02d:%02d:%02d", SysTime.wYear, SysTime.wMonth, SysTime.wDay, SysTime.wHour, SysTime.wMinute, SysTime.wSecond);
-	return str;
-}
-
-char* timeToString(DWORD t, char* str, unsigned int string_size)
-{
-	FILETIME FileTime, LocalFileTime;
-	LONGLONG lgTemp = Int32x32To64(t, 10000000) + 116444736000000000;
-	FileTime.dwLowDateTime = (DWORD)lgTemp;
-	FileTime.dwHighDateTime = (DWORD)(lgTemp >> 32);
-	FileTimeToLocalFileTime(&FileTime, &LocalFileTime);
-	filetimeToString(LocalFileTime, str, string_size);
-	return str;
-}
-
-bool user2sid(LPWSTR csUsername, PSID Sid)
-{
-	UCHAR buffer2[2048];
-	UCHAR buffer3[4];
-	DWORD length = 900;
-	LPCTSTR lpAccountName = csUsername;
-	LPDWORD cbSid = &length;
-	LPTSTR ReferencedDomainName = (LPTSTR)buffer2;
-	LPDWORD cbReferencedDomainName = &length;
-	PSID_NAME_USE peUse = (PSID_NAME_USE)buffer3;
-	if (LookupAccountName(NULL, lpAccountName, Sid, cbSid,
-		ReferencedDomainName, cbReferencedDomainName,
-		peUse))
+	char* type;
+	switch (UserPriv)
 	{
-		return 1;
+	case 0:printf("GUEST"); break;
+	case 1:printf("USER"); break;
+	case 2:printf("ADMIN"); break;
+	default:printf("UNK"); break;
+	}
+}
+
+
+
+
+int RegSAMQuery()
+{
+	DWORD Data;
+	DWORD DataSize = TOTALBYTES;
+
+	PPERF_DATA_BLOCK PerfData = (PPERF_DATA_BLOCK)malloc(DataSize);
+	lRet = RegQueryValueEx(hKey, _T("SS"), 0, NULL, (LPBYTE)PerfData, &DataSize);
+	if (ERROR_SUCCESS != lRet)
+	{
+		std::cout << "RegQueryValueEX Fail:" << lRet << std::endl;
+	}
+	else
+	{
+		std::cout << "查询注册表键值为：" << &PerfData << std::endl;
 	}
 	return 0;
 }
-
-
 
 int main()
 {
@@ -97,13 +92,11 @@ int main()
 				}
 				std::cout << "账号名：";
 				LPWSTR szUsername = (pTmpBuf->usri2_name);
-
 				std::wstring wUsernamestr(szUsername);
 				const WCHAR* fuhao = L"$";
-
 				if (wcsstr(pTmpBuf->usri2_name, fuhao))
 				{
-					std::wcout << wUsernamestr;
+					std::wcout << dwTotalCount + 1 << "." << wUsernamestr ;
 					std::wcout << "(隐藏账号)\n";
 				}
 				else
@@ -111,22 +104,75 @@ int main()
 					std::wcout << dwTotalCount + 1 << "." << wUsernamestr << "\n";
 				}
 
-				//权限码
-				std::cout << "账号权限码:" << pTmpBuf->usri2_priv << std::endl;
-				//SID
+				//权限码-账号类型
+				std::cout << "账号类型: ";
+				Account_Class(pTmpBuf->usri2_priv);
+				std::cout << std::endl;
+			
+				//SID展示
 				PSID sidUser;
 				UCHAR buffer1[2048];
 				sidUser = buffer1;
 				WCHAR* sid;
-
 				user2sid(pTmpBuf->usri2_name, sidUser);
 				ConvertSidToStringSid(sidUser, &sid);
- 				std::wcout << "SID:" <<sid << std::endl;
+  				std::wcout << "S I D :  " <<sid ;
+				if (IsValidSid(sidUser))
+				{
+					std::cout << "（有效）" << std::endl;
+				}
+				else
+				{
+					std::cout << "（无效）" << std::endl;
+				}
+
+				//账号状态
+				std::cout << "账号是否启用：";
+				if (pTmpBuf->usri2_flags&UF_ACCOUNTDISABLE)
+				{
+					std::cout << "关闭" << std::endl; 
+				}
+				else
+				{
+					std::cout << "启用" << std::endl;
+				}
+
+				//是否为克隆账号
+				WCHAR* sidtmp = sid;
+				while (wcsrchr(sidtmp,'-')!=NULL)
+				{
+					sidtmp = wcsrchr(sidtmp, '-') + 1;
+				}
+				WCHAR wsid[5] = { 0 };
+				wcscpy_s(wsid, sidtmp);
+				int isid = _wtoi(sidtmp);
+				WCHAR whexsid[10] = { 0 };
+				_itow_s(isid, whexsid, 16);
+				WCHAR SubKey[200] = L"SAM\\SAM\\Domains\\Account\\Users\\00000";
+				wcscat_s(SubKey, whexsid);
+				HKEY hKey;
+				int lRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SubKey, 0, KEY_ALL_ACCESS, &hKey);
+				if (lRet == ERROR_SUCCESS)
+				{
+					DWORD Data;
+					DWORD DataSize = 8192;
+
+					PPERF_DATA_BLOCK PerfData = (PPERF_DATA_BLOCK)malloc(DataSize);
+					lRet = RegQueryValueEx(hKey, L"SS", 0, NULL, (LPBYTE)PerfData, &DataSize);
+					if (ERROR_SUCCESS != lRet)
+					{
+						std::cout << "RegQueryValueEX Fail:" << lRet << std::endl;
+					}
+					else
+					{
+						std::cout << "查询注册表键值为：" << &PerfData << std::endl;
+					}
+				}
 				//时间戳
-				char strTime[128] = { 0 };
+   				char strTime[128] = { 0 };
 				timeToString(pTmpBuf->usri2_last_logon, strTime, sizeof(strTime));
-				std::cout << "上次登录时间:" << strTime << std::endl;
-				
+				std::cout << "最后登录时间: " << strTime << std::endl;
+				std::cout << std::endl;
  				pTmpBuf++;
 				dwTotalCount++;
 			}
@@ -154,7 +200,7 @@ int main()
 	//
 	// Print the final count of users enumerated.
 	//
-	fprintf(stderr, "%d个\n", dwTotalCount);
+	fprintf(stderr, "%d个\n", dwEntriesRead);
 	system("PAUSE");
 	return 0;
 

@@ -18,5 +18,19 @@
     <ClCompile Include="WIN_GetUserInfo.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="DwordTimetoString.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="User2Sid.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="DwordTimetoString.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="User2Sid.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
