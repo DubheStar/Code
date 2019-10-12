@@ -144,7 +144,7 @@ int main()
 					}
 					else
 					{
-						std::cout << "检测是否为克隆账号: " << std::endl;
+						std::cout << "检测是否为克隆账号: " ;
 						WCHAR hexFvalue48[16] = { 0 };
 						WCHAR hexFvalue49[16] = { 0 };
 						_itow_s(INT(value[48]), hexFvalue48, 16);
