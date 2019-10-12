@@ -15,7 +15,7 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="CloneAccount.cpp">
+    <ClCompile Include="Win_AddUser.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
   </ItemGroup>
