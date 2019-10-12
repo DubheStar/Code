@@ -133,10 +133,10 @@ int main()
 				int lRet = RegOpenKeyEx(HKEY_LOCAL_MACHINE, SubKey, 0, KEY_WOW64_64KEY | KEY_READ, &hKey);
 				if (lRet == ERROR_SUCCESS)
 				{
-					DWORD DataSize = 8192;
-					BYTE value[256] = { 0 };
+					DWORD DataSize = 256;
+					UCHAR value[256] = { 0 };
 					//PPERF_DATA_BLOCK PerfData = (PPERF_DATA_BLOCK)malloc(DataSize);
-					lRet = RegQueryValueExW(hKey, L"F", 0, NULL, (LPBYTE)value, &DataSize);
+					lRet = RegQueryValueEx(hKey, L"F", 0, NULL, (LPBYTE)value, &DataSize);
 					if (ERROR_SUCCESS != lRet)
 					{
 						std::cout << "请使用管理员权限打开!(" << lRet << std::endl;
@@ -144,11 +144,24 @@ int main()
 					}
 					else
 					{
-						std::cout << "查询注册表键值为：" << &value << std::endl;
+						std::cout << "检测是否为克隆账号: " << std::endl;
+						WCHAR hexFvalue48[16] = { 0 };
+						WCHAR hexFvalue49[16] = { 0 };
+						_itow_s(INT(value[48]), hexFvalue48, 16);
+						_itow_s(INT(value[49]), hexFvalue49, 16);
+						wcscat_s((hexFvalue49), hexFvalue48);
+						if (_wtoi(whexsid) != _wtoi(hexFvalue49))
+						{
+							std::cout << "（克隆账号）\n";
+						}
+						else
+						{
+							std::cout << "（正常账号）\n";
+						}
 					}
 				}
 				//时间戳
-   				char strTime[128] = { 0 };
+     				char strTime[128] = { 0 };
 				timeToString(pTmpBuf->usri2_last_logon, strTime, sizeof(strTime));
 				std::cout << "最后登录时间: " << strTime << std::endl;
 				std::cout << std::endl;
