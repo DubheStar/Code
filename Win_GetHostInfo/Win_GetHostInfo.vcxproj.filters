@@ -15,8 +15,22 @@
     </Filter>
   </ItemGroup>
   <ItemGroup>
-    <ClCompile Include="Win_GetSystemVersion.c">
+    <ClCompile Include="Win_GetHostInfo.cpp">
       <Filter>源文件</Filter>
     </ClCompile>
+    <ClCompile Include="GetHostName.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+    <ClCompile Include="GetSystemVer.cpp">
+      <Filter>源文件</Filter>
+    </ClCompile>
+  </ItemGroup>
+  <ItemGroup>
+    <ClInclude Include="GetHostName.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
+    <ClInclude Include="GetSystemVer.h">
+      <Filter>源文件</Filter>
+    </ClInclude>
   </ItemGroup>
 </Project>
