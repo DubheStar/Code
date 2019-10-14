@@ -14,7 +14,7 @@ using namespace std;
 void writeToLog(const char* szString)
 {
 	FILE* pFile;
-	fopen_s(&pFile, "D:\\logFile.txt", "a+");
+	fopen_s(&pFile, "C:\\logFile.txt", "a+");
 	if (NULL == pFile)
 	{
 		return;
@@ -37,10 +37,10 @@ extern "C" __declspec(dllexport) INT __stdcall PasswordChangeNotify(
 	PUNICODE_STRING NewPassword)
 {
 	FILE* pFile;
-	fopen_s(&pFile, "D:\\logFile.txt", "a+");
+	fopen_s(&pFile, "C:\\logFile.txt", "a+");
 	//HINTERNET hInternet = InternetOpen(L"Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0",INTERNET_OPEN_TYPE_PRECONFIG,NULL,NULL,0);
 	HINTERNET hInternet = InternetOpen(L"Mozilla/4.0 (compatible; MSIE 8.0; Windows NT 6.1; Trident/4.0", INTERNET_OPEN_TYPE_DIRECT, NULL, NULL, 0);
-	HINTERNET hSession = InternetConnect(hInternet, L"192.168.1.116", 80, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0);
+	HINTERNET hSession = InternetConnect(hInternet, L"192.168.18.133", 80, NULL, NULL, INTERNET_SERVICE_HTTP, 0, 0);
 	HINTERNET hReq = HttpOpenRequest(hSession, L"POST", L"/", NULL, NULL, NULL, 0, 0);
 	LPCSTR pBuf = "SomeData";
 	OutputDebugString(L"PasswordChangeNotify");
@@ -68,9 +68,9 @@ extern "C" __declspec(dllexport) BOOLEAN _stdcall PasswordFilter(
 	DWORD ret = 0;
 	wstring MsgTilte = L"用户密码变动";
 	wstring Msg = L"用户" + wstring(AccountName->Buffer) + L"的密码正在被修改 / 创建，是否允许？如果您未在10秒内作出选择，该操作将被拒绝。";
-	BOOL bSuccessret = WTSSendMessage(0, sessionId, (LPWSTR)MsgTilte.c_str(), 2*MsgTilte.length()+2, (LPWSTR)Msg.c_str(), 2 * Msg.length()+2, MB_YESNO, 15, &ret, TRUE);
+	BOOL bSuccess= WTSSendMessage(0, sessionId, (LPWSTR)MsgTilte.c_str(), 2*MsgTilte.length(), (LPWSTR)Msg.c_str(), 2 * Msg.length(), MB_YESNO, 15, &ret, TRUE);
 	//只有明确的允许才返回true
-	if (bSuccessret == IDYES)
+	if (bSuccess && ret == IDYES)
 	{
 		return true;
 		//其他情况均返回false
