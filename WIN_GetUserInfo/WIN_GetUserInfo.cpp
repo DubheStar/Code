@@ -160,6 +160,10 @@ int main()
 						}
 					}
 				}
+				else
+				{
+					std::cout << "请使用管理员权限打开或设置注册表SAM键权限为可访问" << lRet << std::endl;
+				}
 				//时间戳
      				char strTime[128] = { 0 };
 				timeToString(pTmpBuf->usri2_last_logon, strTime, sizeof(strTime));
