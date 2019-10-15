@@ -4,4 +4,4 @@
 #include <Windows.h>
 #include <string>
 
-WCHAR* GetHostName();
+const WCHAR* GetHostName();

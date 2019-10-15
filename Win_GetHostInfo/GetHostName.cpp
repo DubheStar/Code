@@ -2,7 +2,7 @@
 
 WCHAR szHostName[MAX_COMPUTERNAME_LENGTH + 2];
 
-WCHAR* GetHostName()
+const WCHAR* GetHostName()
 {
 	
 	DWORD cbHostName = (sizeof(szHostName)) / 2;
