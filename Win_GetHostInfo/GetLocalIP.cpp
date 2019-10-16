@@ -1,8 +1,9 @@
 #include "GetLocalIP.h"
 
 WCHAR* szHostName;
+char addrbuff[INET6_ADDRSTRLEN];
+WCHAR szAddrBuff[INET6_ADDRSTRLEN];
 
-std::string local_ip[5];
 WCHAR* get_local_ip(const WCHAR* szHostName)   
 {
 	//初始化:如果不初始化，以下代码将无法执行
@@ -21,12 +22,26 @@ WCHAR* get_local_ip(const WCHAR* szHostName)
 	}
 	else
 	{
-		for (int i = 0; hostinfo->h_addr_list[i] != 0; i++)
+		char** paddrlist = hostinfo->h_addr_list;
+		while (*paddrlist !=NULL )
 		{
-			//struct in_addr in;
-			//memcpy(&in, hostinfo->h_addr, sizeof(struct in_addr));
-			local_ip[i] = inet_ntoa(*(struct in_addr*) * hostinfo->h_addr_list[i]);
-
+			char addrbuff[INET6_ADDRSTRLEN];
+			if (inet_ntop(hostinfo->h_addrtype,*paddrlist,addrbuff,hostinfo->h_addrtype == AF_INET ? INET_ADDRSTRLEN :INET6_ADDRSTRLEN))
+			{
+				if (strncmp(addrbuff, "192.168.", 8) == 0)
+				{
+					std::cout << addrbuff << "|";
+				}
+				else if (strncmp(addrbuff, "172.16.", 7) == 0)
+				{
+					std::cout << addrbuff << "|";
+				}
+				else if (strncmp(addrbuff, "10.", 3) == 0)
+				{
+					std::cout << addrbuff << "|";
+				}
+			}
+			paddrlist++;
 		}
 
 	}
