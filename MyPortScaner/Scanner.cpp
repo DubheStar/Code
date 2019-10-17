@@ -51,8 +51,8 @@ void CScanner::Addip(char * szIP)
 		}
 
 		//解析IP地址字符串成IN_ADDR格式
-		char strStartIp[16];
-		char strEndIP[16];
+		char strStartIp[INET_ADDRLEN];
+		char strEndIP[INET_ADDRLEN];
 		DWORD start = htonl(inet_addr(szStartIP));
 		//DWORD start = inet_pton(AF_INET, szStartIP, &strStartIp);
 		DWORD end = htonl(inet_addr(szEndIP));
