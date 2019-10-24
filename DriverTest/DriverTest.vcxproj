@@ -65,13 +65,13 @@
     <DriverTargetPlatform>Universal</DriverTargetPlatform>
   </PropertyGroup>
   <PropertyGroup Condition="'$(Configuration)|$(Platform)'=='Debug|x64'" Label="Configuration">
-    <TargetVersion>Windows10</TargetVersion>
+    <TargetVersion>Windows7</TargetVersion>
     <UseDebugLibraries>true</UseDebugLibraries>
     <PlatformToolset>WindowsKernelModeDriver10.0</PlatformToolset>
     <ConfigurationType>Driver</ConfigurationType>
     <DriverType>KMDF</DriverType>
-    <DriverTargetPlatform>Universal</DriverTargetPlatform>
-    <SpectreMitigation>false</SpectreMitigation>
+    <DriverTargetPlatform>Desktop</DriverTargetPlatform>
+    <SpectreMitigation>Spectre</SpectreMitigation>
     <KMDF_VERSION_MAJOR>
     </KMDF_VERSION_MAJOR>
   </PropertyGroup>
