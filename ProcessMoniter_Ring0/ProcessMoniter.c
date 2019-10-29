@@ -216,7 +216,7 @@ VOID ImageCreateMon(IN PUNICODE_STRING  FullImageName, IN HANDLE  ProcessId, IN 
 		//判断系统进程
 		if (ProcessId == 4)break;
 		//对于新加载的内核模式组件（如驱动程序），请设置为一，对于映射到用户空间的映像，设置为零。
-		if (ImageInfo->SystemModeImage != TRUE)break;
+		if (ImageInfo->SystemModeImage == TRUE)break;
 
 	} while (FALSE);
 
