@@ -111,8 +111,8 @@ VOID ProcessNotify(IN PEPROCESS Process,IN HANDLE ProcessId, IN PPS_CREATE_NOTIF
 			return;
 		}
 		g_bMainThread = TRUE;
-		DbgPrint("process|%s|%d|%s|%d\n", (char*)((char*)Process + ProcessNameOffset), ProcessId, CreateInfo->ImageFileName, ParentProcess);
-		sprintf(outBuf, "process|%s|%d|%s|%d\n", (char*)((char*)Process + ProcessNameOffset), ProcessId, CreateInfo->ImageFileName, ParentProcess);
+		DbgPrint("process|%s|%d|%s|%s\n", (char*)((char*)Process + ProcessNameOffset), ProcessId, CreateInfo->ImageFileName, CreateInfo->CommandLine);
+		sprintf(outBuf, "process|%s|%d|%s|%s\n", (char*)((char*)Process + ProcessNameOffset), ProcessId, CreateInfo->ImageFileName, CreateInfo->CommandLine);
 		if (gpEventObject != NULL)
 		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
@@ -122,8 +122,8 @@ VOID ProcessNotify(IN PEPROCESS Process,IN HANDLE ProcessId, IN PPS_CREATE_NOTIF
 	}
 	else if (NULL == CreateInfo)//进程退出
 	{
-		DbgPrint("process_over|%d\n", Process);
-		sprintf(outBuf, "process_over|%d\n", Process);
+		DbgPrint("process_over|%d\n", ProcessId);
+		sprintf(outBuf, "process_over|%d\n", ProcessId);
 		if (gpEventObject != NULL)
 		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
@@ -213,8 +213,12 @@ VOID ImageNotify(IN PUNICODE_STRING  FullImageName, IN HANDLE  ProcessId, IN PIM
 	{
 		return;
 	}
-	DbgPrint("Image|ImageName: %s,Process ID: %d,ImageBase: %x,ImageSize: %d\n", FullImageName->Buffer, ProcessId, ImageInfo->ImageBase, ImageInfo->ImageSize);
+	DbgPrint("Image|ImageName: %S,Process ID: %d,ImageBase: %x,ImageSize: %d\n", FullImageName->Buffer, ProcessId, ImageInfo->ImageBase, ImageInfo->ImageSize);
 	DbgPrint("Image|ImageSignatureLevel:%d,ImageSignatureType:%d,SystemModeImage:%d\n", ImageInfo->ImageSignatureLevel, ImageInfo->ImageSignatureType, ImageInfo->SystemModeImage);
+	if (gpEventObject != NULL)
+	{
+		KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
+	}
 }
 
 NTSTATUS OnUnload(IN PDRIVER_OBJECT pDriverObject)
