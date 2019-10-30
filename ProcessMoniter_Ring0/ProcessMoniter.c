@@ -94,41 +94,79 @@ NTSTATUS GetRegValue(PCWSTR RegPath, PCWSTR ValueName, PWCHAR Value)
 	return ReturnValue;
 }
 
+VOID ProcessNotify(IN PEPROCESS Process,IN HANDLE ProcessId, IN PPS_CREATE_NOTIFY_INFO CreateInfo)
+{
+	PEPROCESS        ParentProcess;//EPROCESS结构是一个不透明的结构，它充当进程的进程对象
+	NTSTATUS         status;
 
+	if (NULL != CreateInfo)//进程创建
+	{
+		g_dwParentId = CreateInfo->ParentProcessId;
+		//Pid------ > Object(EPROCESS)原理就是通过 PsLookUpProcessByProcessId 传入PID.传出EPROCESS.
+		status = PsLookupProcessByProcessId((ULONG)(CreateInfo->ParentProcessId), &ParentProcess);
+		if (!NT_SUCCESS(status))
+		{
+			DbgPrint("error\n");
+			ObDereferenceObject(ParentProcess);//对象创建(ObCreateObject)和对象删除(ObDereferenceObject、ObpRemoveObjectRoutine)
+			return;
+		}
+		g_bMainThread = TRUE;
+		DbgPrint("process|%s|%d|%s|%d\n", (char*)((char*)Process + ProcessNameOffset), ProcessId, CreateInfo->ImageFileName, ParentProcess);
+		sprintf(outBuf, "process|%s|%d|%s|%d\n", (char*)((char*)Process + ProcessNameOffset), ProcessId, CreateInfo->ImageFileName, ParentProcess);
+		if (gpEventObject != NULL)
+		{
+			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
+		}
 
-VOID ThreadCreateMon(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
+		ObDereferenceObject(ParentProcess);//删除对象
+	}
+	else if (NULL == CreateInfo)//进程退出
+	{
+		DbgPrint("process_over|%d\n", Process);
+		sprintf(outBuf, "process_over|%d\n", Process);
+		if (gpEventObject != NULL)
+		{
+			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
+		}
+	}
+}
+
+VOID ThreadNotify(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
 {
 
-	PEPROCESS   EProcess, PEProcess;
+	PEPROCESS   EProcess, ParentEProcess;
 	NTSTATUS    status;
-	HANDLE        dwParentPID;
+	HANDLE      dwParentPID;
 
 	status = PsLookupProcessByProcessId((ULONG)PId, &EProcess);
 	if (!NT_SUCCESS(status))
 	{
-		DbgPrint("error\n");
+		DbgPrint("ThreadPID PsLookupProcessByProcessId error\n");
 		return;
 	}
 
 	if (bCreate)
 	{
 		dwParentPID = PsGetCurrentProcessId();
-		status = PsLookupProcessByProcessId((ULONG)dwParentPID, &PEProcess); if (!NT_SUCCESS(status))
+		status = PsLookupProcessByProcessId((ULONG)dwParentPID, &ParentEProcess);
+		if (!NT_SUCCESS(status))
 		{
 			ObDereferenceObject(EProcess);
-			DbgPrint("error\n");
+			DbgPrint("ParentPID PsLookupProcessByProcessId error\n");
 			return;
 		}
 		if (PId == 4)//System进程创建的不管
 		{
-			ObDereferenceObject(PEProcess);
+			ObDereferenceObject(ParentEProcess);
 			ObDereferenceObject(EProcess);
 			return;
 		}
+		//线程对应的进程已创建 && 全局线程对应进程的父进程PID!=线程对应进程的父进程PID && 线程对应进程的父进程PID!=线程对应进程的 （单独展示远程线程）
 		if ((g_bMainThread == TRUE) && (g_dwParentId != dwParentPID) && (dwParentPID != PId))
 		{
 			g_bMainThread = FALSE;
-			sprintf(outBuf, "r_thread|%s|%d|%s|%d\n", (char*)((char*)EProcess + ProcessNameOffset), PId, (char*)((char*)PEProcess + ProcessNameOffset), dwParentPID);
+			DbgPrint("RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|REMOTEPName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
+			sprintf(outBuf, "RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|REMOVEPName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
 			if (gpEventObject != NULL)
 			{
 				KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
@@ -136,23 +174,26 @@ VOID ThreadCreateMon(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
 		}
 		if (CheckList.ONLYSHOWREMOTETHREAD)//只显示远线程
 		{
-			ObDereferenceObject(PEProcess);
+			ObDereferenceObject(ParentEProcess);
 			ObDereferenceObject(EProcess);
 			return;
 		}
-		DbgPrint("thread|%s|%d|%s|%d\n", (char*)((char*)EProcess + ProcessNameOffset), PId, (char*)((char*)PEProcess + ProcessNameOffset), dwParentPID);
-		sprintf(outBuf, "thread|%s|%d|%s|%d\n", (char*)((char*)EProcess + ProcessNameOffset), PId, (char*)((char*)PEProcess + ProcessNameOffset), dwParentPID);
+		DbgPrint("Thread|TID:%d|PID:%d|PName:%s|PPID:%d|PPName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
+		sprintf(outBuf, "Thread|TID:%d|PID:%d|PName:%s|PPID:%d|PPName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
 		if (gpEventObject != NULL)
+		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
-
-		ObDereferenceObject(PEProcess);
+		}
+		ObDereferenceObject(ParentEProcess);
 	}
-	else if (CheckList.SHOWTERMINATETHREAD)
+	else if (CheckList.SHOWEXITTHREAD)
 	{
-		DbgPrint("thread_over|%d\n", TId);
-		sprintf(outBuf, "thread_over|%d\n", TId);
+		DbgPrint("ThreadExit|%d\n", TId);
+		sprintf(outBuf, "ThreadExit|%d\n", TId);
 		if (gpEventObject != NULL)
+		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
+		}
 	}
 	ObDereferenceObject(EProcess);
 }
@@ -163,66 +204,17 @@ VOID ThreadCreateMon(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
 	{
 	}
 */
-VOID ProcessCreateMon(HANDLE hParentId, HANDLE PId, BOOLEAN bCreate)
+
+
+VOID ImageNotify(IN PUNICODE_STRING  FullImageName, IN HANDLE  ProcessId, IN PIMAGE_INFO  ImageInfo)
 {
-
-	PEPROCESS        EProcess, PProcess;//EPROCESS结构是一个不透明的结构，它充当进程的进程对象
-	NTSTATUS        status;
-	HANDLE            TId;
-
-	g_dwParentId = hParentId;
-	//Pid------ > Object(EPROCESS)原理就是通过 PsLookUpProcessByProcessId 传入PID.传出EPROCESS.
-	status = PsLookupProcessByProcessId((ULONG)PId, &EProcess);
-	if (!NT_SUCCESS(status))
+	//判断系统进程
+	if (ProcessId == 4)
 	{
-		DbgPrint("error\n");
 		return;
 	}
-	status = PsLookupProcessByProcessId((ULONG)hParentId, &PProcess);
-	if (!NT_SUCCESS(status))
-	{
-		DbgPrint("error\n");
-		ObDereferenceObject(EProcess);//对象创建(ObCreateObject)和对象删除(ObDereferenceObject、ObpRemoveObjectRoutine)
-		return;
-	}
-
-	if (bCreate)//如果为True，则为进程创建，反之则为退出
-	{
-		g_bMainThread = TRUE;
-		DbgPrint("process|%s|%d|%s|%d\n", (char*)((char*)EProcess + ProcessNameOffset), PId, (char*)((char*)PProcess + ProcessNameOffset), hParentId);
-		sprintf(outBuf, "process|%s|%d|%s|%d\n", (char*)((char*)EProcess + ProcessNameOffset), PId, (char*)((char*)PProcess + ProcessNameOffset), hParentId);
-		if (gpEventObject != NULL)
-		{
-			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
-		}
-	}
-	else if (CheckList.SHOWTERMINATEPROCESS)//进程退出
-	{
-		DbgPrint("process_over|%d\n", PId);
-		sprintf(outBuf, "process_over|%d\n", PId);
-		if (gpEventObject != NULL)
-		{
-			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
-		}
-	}
-
-	ObDereferenceObject(PProcess);//删除对象
-	ObDereferenceObject(EProcess);
-}
-
-VOID ImageCreateMon(IN PUNICODE_STRING  FullImageName, IN HANDLE  ProcessId, IN PIMAGE_INFO  ImageInfo)
-{
-	do{
-		//判断系统进程
-		if (ProcessId == 4)break;
-		//对于新加载的内核模式组件（如驱动程序），请设置为一，对于映射到用户空间的映像，设置为零。
-		if (ImageInfo->SystemModeImage == TRUE)break;
-
-	} while (FALSE);
-
-	DbgPrint("FullImageName: %S,Process ID: %d\n", FullImageName->Buffer, ProcessId);
-	DbgPrint("ImageBase: %x,ImageSize: %d\n", ImageInfo->ImageBase, ImageInfo->ImageSize);
-	DbgPrint("ImageSignatureLevel:%d,ImageSignatureType:%d,SystemModeImage:%d", ImageInfo->ImageSignatureLevel, ImageInfo->ImageSignatureType, ImageInfo->SystemModeImage);
+	DbgPrint("Image|ImageName: %s,Process ID: %d,ImageBase: %x,ImageSize: %d\n", FullImageName->Buffer, ProcessId, ImageInfo->ImageBase, ImageInfo->ImageSize);
+	DbgPrint("Image|ImageSignatureLevel:%d,ImageSignatureType:%d,SystemModeImage:%d\n", ImageInfo->ImageSignatureLevel, ImageInfo->ImageSignatureType, ImageInfo->SystemModeImage);
 }
 
 NTSTATUS OnUnload(IN PDRIVER_OBJECT pDriverObject)
@@ -236,8 +228,9 @@ NTSTATUS OnUnload(IN PDRIVER_OBJECT pDriverObject)
 		ObDereferenceObject(gpEventObject);
 	}
 
-	PsSetCreateProcessNotifyRoutine(ProcessCreateMon, TRUE);
-	PsRemoveCreateThreadNotifyRoutine(ThreadCreateMon);
+	PsSetCreateProcessNotifyRoutineEx(ProcessNotify, TRUE);
+	PsRemoveCreateThreadNotifyRoutine(ThreadNotify);
+	PsRemoveLoadImageNotifyRoutine(ImageNotify);
 	IoDeleteSymbolicLink(&devLinkUnicd);
 
 	if (pDriverObject->DeviceObject != NULL)
@@ -382,22 +375,22 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT pDriverObject, IN PUNICODE_STRING theRegi
 	NTSTATUS PsSetCreateProcessNotifyRoutine(PCREATE_PROCESS_NOTIFY_ROUTINE NotifyRoutine, BOOLEAN Remove);
 	PCREATE_PROCESS_NOTIFY_ROUTINE PcreateProcessNotifyRoutine;
 	*/
-	Status = PsSetCreateProcessNotifyRoutine(ProcessCreateMon, FALSE);
+	Status = PsSetCreateProcessNotifyRoutineEx(ProcessNotify, FALSE);
 	if (!NT_SUCCESS(Status))
 	{
-		//如果未调用成功则移除回调函数，PsSetCreateProcessNotifyRoutine第二参数为是否Remove，若为True，则移除，为False则注册。
-		DbgPrint("PsSetCreateProcessNotifyRoutine error\n");
-		goto CleanSymbolLink;
+		//如果未调用成功则移除回调函数，PsSetCreateProcessNotifyRoutineEx第二参数为是否Remove，若为True，则移除，为False则注册。
+		DbgPrint("PsSetCreateProcessNotifyRoutineEx error\n");
+		goto CleanProcessNotify;
 	}
 	//注册Windows进程创建回调函数，当有线程创建时会调用ProcessCreateMon()回调函数
-	Status = PsSetCreateThreadNotifyRoutine(ThreadCreateMon);
+	Status = PsSetCreateThreadNotifyRoutine(ThreadNotify);
 	if (!NT_SUCCESS(Status))
 	{
 		//如果未调用成功则移除回调函数，PsSetCreateThreadNotifyRoutine第二参数为是否Remove，若为True，则移除，为False则注册。
 		DbgPrint("PsSetCreateThreadNotifyRoutine error\n");
 		goto CleanTreadNotify;
 	}
-	Status = PsSetLoadImageNotifyRoutine(ImageCreateMon);
+	Status = PsSetLoadImageNotifyRoutine(ImageNotify);
 	if (!NT_SUCCESS(Status))
 	{
 		DbgPrint("PsSetLoadImageNotifyRoutine error\n");
@@ -406,11 +399,11 @@ NTSTATUS DriverEntry(IN PDRIVER_OBJECT pDriverObject, IN PUNICODE_STRING theRegi
 	}
 	return STATUS_SUCCESS;
 CleanTreadNotify:
-	PsRemoveCreateThreadNotifyRoutine(ThreadCreateMon);
+	PsRemoveCreateThreadNotifyRoutine(ThreadNotify);
 CleanImageNotify:
-	PsRemoveLoadImageNotifyRoutine(ImageCreateMon);
+	PsRemoveLoadImageNotifyRoutine(ImageNotify);
 CleanProcessNotify:
-	PsSetCreateProcessNotifyRoutine(ProcessCreateMon, TRUE);
+	PsSetCreateProcessNotifyRoutineEx(ProcessNotify, TRUE);
 CleanSymbolLink:
 	IoDeleteSymbolicLink(&devLinkUnicd);
 CleanDevice:
