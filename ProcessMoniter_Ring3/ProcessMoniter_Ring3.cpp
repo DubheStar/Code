@@ -47,11 +47,11 @@ int main()
 		NULL);
 	printf("hEvent:%08x\n", m_hCommEvent);
 
-	status = DeviceIoControl(hDevice,//CreateFile函数打开的设备句柄
-		IOCTL_PASSEVENT,//自定义的控制码
-		&m_hCommEvent,//输入缓冲区
+	status = DeviceIoControl(hDevice, //驱动的设备对象句柄
+		IOCTL_PASSEVENT,//控制码
+		&m_hCommEvent, // 发往R0层的数据
 		sizeof(m_hCommEvent),//输入缓冲区的大小
-		NULL,//输出缓冲区
+		NULL,//提供一个缓冲区，接受R0返回的数据
 		0,//输出缓冲区的大小
 		&dwReturn,//实际返回的字节数，对应驱动程序中pIrp->IoStatus.Information。
 		NULL);//重叠操作结构指针。同步设为NULL，DeviceIoControl将进行阻塞调用；否则，应在编程时按异步操作设计
@@ -81,19 +81,19 @@ int main()
 		return 0;
 	}
 
-	printf("      [Process Name]    [PID]    [TID]    [Parent Process Name]    [PID]  [TID]\n");
+	printf("Moniter Started！\n");
 	while (1)
 	{
 		ResetEvent(m_hCommEvent);
 		WaitForSingleObject(m_hCommEvent, INFINITE);
-		status = DeviceIoControl(hDevice,
-			IOCTL_PASSBUF,
-			NULL,
-			0,
-			&outbuf,
-			sizeof(outbuf),
-			&dwReturn,
-			NULL);
+		status = DeviceIoControl(hDevice,//驱动的设备对象句柄
+			IOCTL_PASSBUF,//控制码
+			NULL,// 发往R0层的数据
+			0,//输入缓冲区的大小
+			&outbuf,//提供一个缓冲区，接受R0返回的数据
+			sizeof(outbuf),//输出缓冲区的大小
+			&dwReturn,//实际返回的字节数，对应驱动程序中pIrp->IoStatus.Information。
+			NULL);//重叠操作结构指针。同步设为NULL，DeviceIoControl将进行阻塞调用；否则，应在编程时按异步操作设计
 		if (!status)
 		{
 			printf("IO wrong+%d\n", GetLastError());
