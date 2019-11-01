@@ -15,13 +15,13 @@ int main()
 
 	hDevice = NULL;
 	m_hCommEvent = NULL;
-	hDevice = CreateFileA("\\\\.\\MonitorProcess",
-		GENERIC_READ | GENERIC_WRITE,
-		FILE_SHARE_READ | FILE_SHARE_WRITE,
-		NULL,
-		OPEN_EXISTING,
-		FILE_ATTRIBUTE_NORMAL,
-		NULL);
+	hDevice = CreateFileA("\\\\.\\MonitorProcess",//打开的文件名
+		GENERIC_READ | GENERIC_WRITE,//访问权限
+		FILE_SHARE_READ | FILE_SHARE_WRITE,//共享模式
+		NULL,//安全属性
+		OPEN_EXISTING,//文件存在与不存在时的文件创建模式
+		FILE_ATTRIBUTE_NORMAL,//文件属性设定（隐藏、只读、压缩、指定为系统文件等）
+		NULL);//文件副本句柄
 	if (hDevice == INVALID_HANDLE_VALUE)
 	{
 		printf("CreateFile wrong\n");
@@ -47,14 +47,14 @@ int main()
 		NULL);
 	printf("hEvent:%08x\n", m_hCommEvent);
 
-	status = DeviceIoControl(hDevice,
-		IOCTL_PASSEVENT,
-		&m_hCommEvent,
-		sizeof(m_hCommEvent),
-		NULL,
-		0,
-		&dwReturn,
-		NULL);
+	status = DeviceIoControl(hDevice,//CreateFile函数打开的设备句柄
+		IOCTL_PASSEVENT,//自定义的控制码
+		&m_hCommEvent,//输入缓冲区
+		sizeof(m_hCommEvent),//输入缓冲区的大小
+		NULL,//输出缓冲区
+		0,//输出缓冲区的大小
+		&dwReturn,//实际返回的字节数，对应驱动程序中pIrp->IoStatus.Information。
+		NULL);//重叠操作结构指针。同步设为NULL，DeviceIoControl将进行阻塞调用；否则，应在编程时按异步操作设计
 	if (!status)
 	{
 		printf("IO wrong+%d\n", GetLastError());
@@ -62,10 +62,10 @@ int main()
 		return 0;
 	}
 
-	CheckList.ONLYSHOWREMOTETHREAD = TRUE;
+	CheckList.ONLYSHOWREMOTETHREAD = FALSE;
 	CheckList.SHOWTHREAD = TRUE;
-	CheckList.SHOWTERMINATETHREAD = FALSE;
-	CheckList.SHOWTERMINATEPROCESS = FALSE;
+	CheckList.SHOWEXITPROCESS = TRUE;
+	CheckList.SHOWEXITTHREAD = TRUE;
 	status = DeviceIoControl(hDevice,
 		IOCTL_PASSEVSTRUCT,
 		&CheckList,

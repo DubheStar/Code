@@ -19,18 +19,7 @@ ULONG                    BuildNumber;	//系统版本号        
 ULONG                    SYSTEMID;      //System进程的ID
 PWCHAR                   Version[VERSIONLEN];
 
-NTSTATUS PsLookupProcessByProcessId(IN ULONG ulProcId, OUT PEPROCESS* pEProcess);
 
-
-/*
-通过PsGetCurrentProcess函数来获取当前调用驱动的进程的EPROCESS结构地址的0x174偏移处存放的进程名.
-思路如下:
-驱动程序的加载函数DriverEntry是运行在System进程中的．
-(1) 通过PsGetCurrentProcess可以获取System进程的内核EPROCESS结构的地址,
-(2) 从该地址开始寻找"System"字符串．
-(3) 找到了便是EPROCESS的进程名存放的偏移处, 得到进程名在EPROCESS结构的偏移后,
-(4) 进程调用驱动的时候, 就可以直接在该偏移处获取当前进程名．
-*/
 ULONG GetProcessNameOffset()
 {
 	PEPROCESS curproc;
@@ -98,6 +87,7 @@ VOID ProcessNotify(IN PEPROCESS Process,IN HANDLE ProcessId, IN PPS_CREATE_NOTIF
 {
 	PEPROCESS        ParentProcess;//EPROCESS结构是一个不透明的结构，它充当进程的进程对象
 	NTSTATUS         status;
+	UNICODE_STRING DosPath = { 0 };
 
 	if (NULL != CreateInfo)//进程创建
 	{
@@ -111,8 +101,8 @@ VOID ProcessNotify(IN PEPROCESS Process,IN HANDLE ProcessId, IN PPS_CREATE_NOTIF
 			return;
 		}
 		g_bMainThread = TRUE;
-		DbgPrint("process|%s|%d|%s|%s\n", (char*)((char*)Process + ProcessNameOffset), ProcessId, CreateInfo->ImageFileName, CreateInfo->CommandLine);
-		sprintf(outBuf, "process|%s|%d|%s|%s\n", (char*)((char*)Process + ProcessNameOffset), ProcessId, CreateInfo->ImageFileName, CreateInfo->CommandLine);
+		DbgPrint("Process|PID:%d|FileName:%wZ|CMDLine:%wZ|TID:%d|PPID:%d\n", ProcessId, CreateInfo->ImageFileName, CreateInfo->CommandLine, CreateInfo->CreatingThreadId.UniqueThread,CreateInfo->ParentProcessId);
+		sprintf(outBuf, "Process|PID:%d|FileName:%wZ|CMDLine:%wZ|TID:%d|PPID:%d\n", ProcessId, CreateInfo->ImageFileName, CreateInfo->CommandLine, CreateInfo->CreatingThreadId.UniqueThread, CreateInfo->ParentProcessId);
 		if (gpEventObject != NULL)
 		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
@@ -122,13 +112,14 @@ VOID ProcessNotify(IN PEPROCESS Process,IN HANDLE ProcessId, IN PPS_CREATE_NOTIF
 	}
 	else if (NULL == CreateInfo)//进程退出
 	{
-		DbgPrint("process_over|%d\n", ProcessId);
-		sprintf(outBuf, "process_over|%d\n", ProcessId);
+		DbgPrint("Process_Exit|PID:%d\n", ProcessId);
+		sprintf(outBuf, "Process_Exit|PID:%d\n", ProcessId);
 		if (gpEventObject != NULL)
 		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
 		}
 	}
+	RtlFreeUnicodeString(&DosPath);
 }
 
 VOID ThreadNotify(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
@@ -161,12 +152,12 @@ VOID ThreadNotify(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
 			ObDereferenceObject(EProcess);
 			return;
 		}
-		//线程对应的进程已创建 && 全局线程对应进程的父进程PID!=线程对应进程的父进程PID && 线程对应进程的父进程PID!=线程对应进程的 （单独展示远程线程）
+		//存在主线程 && 全局线程对应进程的父进程PID!=线程对应进程的父进程PID && 线程对应进程的父进程PID!=线程对应进程的 （单独展示远程线程）
 		if ((g_bMainThread == TRUE) && (g_dwParentId != dwParentPID) && (dwParentPID != PId))
 		{
 			g_bMainThread = FALSE;
-			DbgPrint("RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|REMOTEPName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
-			sprintf(outBuf, "RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|REMOVEPName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
+			DbgPrint("RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|RemotePName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
+			sprintf(outBuf, "RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|RemotePName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
 			if (gpEventObject != NULL)
 			{
 				KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
@@ -188,8 +179,8 @@ VOID ThreadNotify(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
 	}
 	else if (CheckList.SHOWEXITTHREAD)
 	{
-		DbgPrint("ThreadExit|%d\n", TId);
-		sprintf(outBuf, "ThreadExit|%d\n", TId);
+		DbgPrint("Thread_Exit|%d\n", TId);
+		sprintf(outBuf, "Thread_Exit|%d\n", TId);
 		if (gpEventObject != NULL)
 		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
@@ -213,36 +204,12 @@ VOID ImageNotify(IN PUNICODE_STRING  FullImageName, IN HANDLE  ProcessId, IN PIM
 	{
 		return;
 	}
-	DbgPrint("Image|ImageName: %S,Process ID: %d,ImageBase: %x,ImageSize: %d\n", FullImageName->Buffer, ProcessId, ImageInfo->ImageBase, ImageInfo->ImageSize);
-	DbgPrint("Image|ImageSignatureLevel:%d,ImageSignatureType:%d,SystemModeImage:%d\n", ImageInfo->ImageSignatureLevel, ImageInfo->ImageSignatureType, ImageInfo->SystemModeImage);
+	DbgPrint("Image|ImageName:%wZ|Process ID:%d|ImageBase:%x|ImageSize:%d|ImageSignatureLevel:%d|ImageSignatureType:%d|SystemModeImage:%d\n",
+		FullImageName, ProcessId, ImageInfo->ImageBase, ImageInfo->ImageSize, ImageInfo->ImageSignatureLevel, ImageInfo->ImageSignatureType, ImageInfo->SystemModeImage);
 	if (gpEventObject != NULL)
 	{
 		KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
 	}
-}
-
-NTSTATUS OnUnload(IN PDRIVER_OBJECT pDriverObject)
-{
-	NTSTATUS            status;
-
-	DbgPrint("OnUnload called\n");
-
-	if (gpEventObject)
-	{
-		ObDereferenceObject(gpEventObject);
-	}
-
-	PsSetCreateProcessNotifyRoutineEx(ProcessNotify, TRUE);
-	PsRemoveCreateThreadNotifyRoutine(ThreadNotify);
-	PsRemoveLoadImageNotifyRoutine(ImageNotify);
-	IoDeleteSymbolicLink(&devLinkUnicd);
-
-	if (pDriverObject->DeviceObject != NULL)
-	{
-		IoDeleteDevice(pDriverObject->DeviceObject);
-	}
-
-	return STATUS_SUCCESS;
 }
 
 NTSTATUS DeviceIoControlDispatch(
@@ -319,6 +286,28 @@ NTSTATUS DeviceIoControlDispatch(
 	pIrp->IoStatus.Information = 0;
 	IoCompleteRequest(pIrp, IO_NO_INCREMENT);
 	return status;
+}
+
+NTSTATUS OnUnload(IN PDRIVER_OBJECT pDriverObject)
+{
+	DbgPrint("OnUnload called\n");
+
+	if (gpEventObject)
+	{
+		ObDereferenceObject(gpEventObject);
+	}
+	PsRemoveLoadImageNotifyRoutine(ImageNotify);
+	PsRemoveCreateThreadNotifyRoutine(ThreadNotify);
+	PsSetCreateProcessNotifyRoutineEx(ProcessNotify, TRUE);
+	
+	IoDeleteSymbolicLink(&devLinkUnicd);
+
+	if (pDriverObject->DeviceObject != NULL)
+	{
+		IoDeleteDevice(pDriverObject->DeviceObject);
+	}
+
+	return STATUS_SUCCESS;
 }
 
 //入口函数(DriverEntry)：驱动的入口函数主要是对驱动程序进行初始化工作，它是由系统进程所调用。在驱动程序初始化的时候，入口函数被加载进内存，进行初始化，完成之后，就要退出内存。
