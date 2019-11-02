@@ -11,7 +11,7 @@ UNICODE_STRING           devNameUnicd;
 UNICODE_STRING           devLinkUnicd;
 PVOID                    gpEventObject = NULL;	// 与应用程序通信的 Event 对象
 ULONG                    ProcessNameOffset = 0;
-CHAR                     outBuf[255];
+CHAR                    outBuf[255];
 BOOL                     g_bMainThread;
 ULONG                    g_dwParentId;
 CHECKLIST                CheckList;
@@ -87,7 +87,6 @@ VOID ProcessNotify(IN PEPROCESS Process,IN HANDLE ProcessId, IN PPS_CREATE_NOTIF
 {
 	PEPROCESS        ParentProcess;//EPROCESS结构是一个不透明的结构，它充当进程的进程对象
 	NTSTATUS         status;
-	UNICODE_STRING DosPath = { 0 };
 
 	if (NULL != CreateInfo)//进程创建
 	{
@@ -113,13 +112,12 @@ VOID ProcessNotify(IN PEPROCESS Process,IN HANDLE ProcessId, IN PPS_CREATE_NOTIF
 	else if (NULL == CreateInfo)//进程退出
 	{
 		DbgPrint("Process_Exit|PID:%d\n", ProcessId);
-		sprintf(outBuf, "Process_Exit|PID:%d\n", ProcessId);
+		//sprintf(outBuf, "Process_Exit|PID:%d\n", ProcessId);
 		if (gpEventObject != NULL)
 		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
 		}
 	}
-	RtlFreeUnicodeString(&DosPath);
 }
 
 VOID ThreadNotify(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
@@ -157,7 +155,7 @@ VOID ThreadNotify(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
 		{
 			g_bMainThread = FALSE;
 			DbgPrint("RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|RemotePName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
-			sprintf(outBuf, "RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|RemotePName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
+			//sprintf(outBuf, "RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|RemotePName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
 			if (gpEventObject != NULL)
 			{
 				KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
@@ -170,7 +168,7 @@ VOID ThreadNotify(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
 			return;
 		}
 		DbgPrint("Thread|TID:%d|PID:%d|PName:%s|PPID:%d|PPName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
-		sprintf(outBuf, "Thread|TID:%d|PID:%d|PName:%s|PPID:%d|PPName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
+		//sprintf(outBuf, "Thread|TID:%d|PID:%d|PName:%s|PPID:%d|PPName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
 		if (gpEventObject != NULL)
 		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
@@ -180,7 +178,7 @@ VOID ThreadNotify(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
 	else if (CheckList.SHOWEXITTHREAD)
 	{
 		DbgPrint("Thread_Exit|%d\n", TId);
-		sprintf(outBuf, "Thread_Exit|%d\n", TId);
+		//sprintf(outBuf, "Thread_Exit|%d\n", TId);
 		if (gpEventObject != NULL)
 		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
@@ -206,6 +204,8 @@ VOID ImageNotify(IN PUNICODE_STRING  FullImageName, IN HANDLE  ProcessId, IN PIM
 	}
 	DbgPrint("Image|ImageName:%wZ|Process ID:%d|ImageBase:%x|ImageSize:%d|ImageSignatureLevel:%d|ImageSignatureType:%d|SystemModeImage:%d\n",
 		FullImageName, ProcessId, ImageInfo->ImageBase, ImageInfo->ImageSize, ImageInfo->ImageSignatureLevel, ImageInfo->ImageSignatureType, ImageInfo->SystemModeImage);
+	//sprintf(outBuf, "Image|ImageName:%wZ|Process ID:%d|ImageBase:%x|ImageSize:%d|ImageSignatureLevel:%d|ImageSignatureType:%d|SystemModeImage:%d\n",
+	//	FullImageName, ProcessId, ImageInfo->ImageBase, ImageInfo->ImageSize, ImageInfo->ImageSignatureLevel, ImageInfo->ImageSignatureType, ImageInfo->SystemModeImage);
 	if (gpEventObject != NULL)
 	{
 		KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
@@ -223,7 +223,7 @@ NTSTATUS DeviceIoControlDispatch(
 	ULONG                           inputLength;
 	PVOID                           outputBuffer;
 	ULONG                           outputLength;
-	OBJECT_HANDLE_INFORMATION        objHandleInfo;
+	OBJECT_HANDLE_INFORMATION       objHandleInfo;
 
 	status = STATUS_SUCCESS;
 	irpStack = IoGetCurrentIrpStackLocation(pIrp);
@@ -231,10 +231,10 @@ NTSTATUS DeviceIoControlDispatch(
 	switch (irpStack->MajorFunction)
 	{
 	case IRP_MJ_CREATE:
-		DbgPrint("Call IRP_MJ_CREATE\n");
+		DbgPrint("IRP_MJ_CREATE\n");
 		break;
 	case IRP_MJ_CLOSE:
-		DbgPrint("Call IRP_MJ_CLOSE\n");
+		DbgPrint("IRP_MJ_CLOSE\n");
 		break;
 	case IRP_MJ_DEVICE_CONTROL:
 		DbgPrint("IRP_MJ_DEVICE_CONTROL\n");
@@ -242,27 +242,27 @@ NTSTATUS DeviceIoControlDispatch(
 		outputLength = irpStack->Parameters.DeviceIoControl.OutputBufferLength;
 		switch (irpStack->Parameters.DeviceIoControl.IoControlCode)
 		{
-		case IOCTL_PASSEVENT://用事件做通信
+		case IOCTL_PASSEVENT: //对应Ring3CreateEvent创建的事件
 			inputBuffer = pIrp->AssociatedIrp.SystemBuffer;
 
 			DbgPrint("inputBuffer:%08x\n", (HANDLE)inputBuffer);
-			status = ObReferenceObjectByHandle(*(HANDLE*)inputBuffer,
-				GENERIC_ALL,
-				NULL,
-				KernelMode,
-				&gpEventObject,
-				&objHandleInfo);
+			status = ObReferenceObjectByHandle(*(HANDLE*)inputBuffer, //Handle
+				GENERIC_ALL,//指定请求的对象访问类型
+				NULL, //指向对象类型的指针
+				KernelMode, //指定用于访问检查的访问模式。它必须是UserMode或KernelMode。堆栈中的所有其他驱动程序都应指定KernelMode，这将跳过访问检查，并对顶级驱动程序的访问检查承担责任。
+				&gpEventObject, //指向变量的指针，该变量接收指向对象主体的指针
+				&objHandleInfo); //驱动程序将此设置为NULL。
 
 			if (status != STATUS_SUCCESS)
 			{
-				DbgPrint("wrong\n");
+				DbgPrint("ObReferenceObjectByHandle Wrong\n");
 				break;
 			}
 			break;
 		case IOCTL_UNPASSEVENT:
 			if (gpEventObject)
 				ObDereferenceObject(gpEventObject);
-			DbgPrint("UNPASSEVENT called\n");
+			DbgPrint("UNPASSEVENT\n");
 			break;
 		case IOCTL_PASSBUF:
 			RtlCopyMemory(pIrp->UserBuffer, outBuf, outputLength);
@@ -278,7 +278,7 @@ NTSTATUS DeviceIoControlDispatch(
 		}
 		break;
 	default:
-		DbgPrint("Call IRP_MJ_UNKNOWN\n");
+		DbgPrint("IRP_MJ_UNKNOWN\n");
 		break;
 	}
 

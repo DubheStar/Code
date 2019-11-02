@@ -1,7 +1,6 @@
 ﻿#include <windows.h>
 #include <stdio.h>
 #include <windef.h>
-
 #include "define.h"
 
 int main()
@@ -10,7 +9,7 @@ int main()
 	BOOL status;
 	HANDLE m_hCommEvent;
 	ULONG dwReturn;
-	char outbuf[255];
+	CHAR outbuf[255];
 	CHECKLIST CheckList;
 
 	hDevice = NULL;
@@ -66,6 +65,7 @@ int main()
 	CheckList.SHOWTHREAD = TRUE;
 	CheckList.SHOWEXITPROCESS = TRUE;
 	CheckList.SHOWEXITTHREAD = TRUE;
+	CheckList.SHOWIMAGE = FALSE;
 	status = DeviceIoControl(hDevice,
 		IOCTL_PASSEVSTRUCT,
 		&CheckList,
