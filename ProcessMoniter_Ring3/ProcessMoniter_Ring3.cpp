@@ -9,7 +9,7 @@ int main()
 	BOOL status;
 	HANDLE m_hCommEvent;
 	ULONG dwReturn;
-	CHAR outbuf[255];
+	PVOID outbuf[255];
 	CHECKLIST CheckList;
 
 	hDevice = NULL;

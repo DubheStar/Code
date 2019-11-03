@@ -11,7 +11,7 @@ UNICODE_STRING           devNameUnicd;
 UNICODE_STRING           devLinkUnicd;
 PVOID                    gpEventObject = NULL;	// 与应用程序通信的 Event 对象
 ULONG                    ProcessNameOffset = 0;
-CHAR                    outBuf[255];
+PVOID                    outBuf[255];
 BOOL                     g_bMainThread;
 ULONG                    g_dwParentId;
 CHECKLIST                CheckList;
@@ -85,13 +85,13 @@ NTSTATUS GetRegValue(PCWSTR RegPath, PCWSTR ValueName, PWCHAR Value)
 
 VOID ProcessNotify(IN PEPROCESS Process,IN HANDLE ProcessId, IN PPS_CREATE_NOTIFY_INFO CreateInfo)
 {
-	PEPROCESS        ParentProcess;//EPROCESS结构是一个不透明的结构，它充当进程的进程对象
-	NTSTATUS         status;
-
 	if (NULL != CreateInfo)//进程创建
 	{
 		g_dwParentId = CreateInfo->ParentProcessId;
+		g_bMainThread = TRUE;
 		//Pid------ > Object(EPROCESS)原理就是通过 PsLookUpProcessByProcessId 传入PID.传出EPROCESS.
+		PEPROCESS        ParentProcess;//EPROCESS结构是一个不透明的结构，它充当进程的进程对象
+		NTSTATUS         status;
 		status = PsLookupProcessByProcessId((ULONG)(CreateInfo->ParentProcessId), &ParentProcess);
 		if (!NT_SUCCESS(status))
 		{
@@ -99,20 +99,18 @@ VOID ProcessNotify(IN PEPROCESS Process,IN HANDLE ProcessId, IN PPS_CREATE_NOTIF
 			ObDereferenceObject(ParentProcess);//对象创建(ObCreateObject)和对象删除(ObDereferenceObject、ObpRemoveObjectRoutine)
 			return;
 		}
-		g_bMainThread = TRUE;
 		DbgPrint("Process|PID:%d|FileName:%wZ|CMDLine:%wZ|TID:%d|PPID:%d\n", ProcessId, CreateInfo->ImageFileName, CreateInfo->CommandLine, CreateInfo->CreatingThreadId.UniqueThread,CreateInfo->ParentProcessId);
 		sprintf(outBuf, "Process|PID:%d|FileName:%wZ|CMDLine:%wZ|TID:%d|PPID:%d\n", ProcessId, CreateInfo->ImageFileName, CreateInfo->CommandLine, CreateInfo->CreatingThreadId.UniqueThread, CreateInfo->ParentProcessId);
 		if (gpEventObject != NULL)
 		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
 		}
-
 		ObDereferenceObject(ParentProcess);//删除对象
 	}
-	else if (NULL == CreateInfo)//进程退出
+	else //进程退出
 	{
 		DbgPrint("Process_Exit|PID:%d\n", ProcessId);
-		//sprintf(outBuf, "Process_Exit|PID:%d\n", ProcessId);
+		sprintf(outBuf, "Process_Exit|PID:%d\n", ProcessId);
 		if (gpEventObject != NULL)
 		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
@@ -154,8 +152,8 @@ VOID ThreadNotify(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
 		if ((g_bMainThread == TRUE) && (g_dwParentId != dwParentPID) && (dwParentPID != PId))
 		{
 			g_bMainThread = FALSE;
-			DbgPrint("RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|RemotePName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
-			//sprintf(outBuf, "RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|RemotePName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
+			DbgPrint("RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|RemotePName:%s\n", TId, PId, dwParentPID);
+			sprintf(outBuf, "RemoteThread|TID:%d|PID:%d|PName:%s|PPID:%d|RemotePName:%s\n", TId, PId, (WCHAR*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
 			if (gpEventObject != NULL)
 			{
 				KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
@@ -167,24 +165,31 @@ VOID ThreadNotify(IN HANDLE PId, IN HANDLE TId, IN BOOLEAN  bCreate)
 			ObDereferenceObject(EProcess);
 			return;
 		}
-		DbgPrint("Thread|TID:%d|PID:%d|PName:%s|PPID:%d|PPName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
-		//sprintf(outBuf, "Thread|TID:%d|PID:%d|PName:%s|PPID:%d|PPName:%s\n", TId, PId, (char*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
+		DbgPrint("Thread|TID:%d|PID:%d|PName:%s|PPID:%d|PPName:%s\n", TId, PId, (PUNICODE_STRING)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
+		sprintf(outBuf, "Thread|TID:%d|PID:%d|PName:%s|PPID:%d|PPName:%s\n", TId, PId, (WCHAR*)((char*)EProcess + ProcessNameOffset), dwParentPID, (char*)((char*)ParentEProcess + ProcessNameOffset));
+		if (gpEventObject != NULL)
+		{
+			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
+		}
 		if (gpEventObject != NULL)
 		{
 			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
 		}
 		ObDereferenceObject(ParentEProcess);
 	}
-	else if (CheckList.SHOWEXITTHREAD)
+	else
 	{
-		DbgPrint("Thread_Exit|%d\n", TId);
-		//sprintf(outBuf, "Thread_Exit|%d\n", TId);
-		if (gpEventObject != NULL)
+		if (CheckList.SHOWEXITTHREAD)
 		{
-			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
+			DbgPrint("Thread_Exit|%d\n", TId);
+			sprintf(outBuf, "Thread_Exit|%d\n", TId);
+			if (gpEventObject != NULL)
+			{
+				KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
+			}
 		}
+		ObDereferenceObject(EProcess);
 	}
-	ObDereferenceObject(EProcess);
 }
 
 //进程创建回调函数，PsSetCreateProcessNotifyRoutine第二参数为是否Remove，若为True，则移除，为False则注册。
@@ -202,13 +207,15 @@ VOID ImageNotify(IN PUNICODE_STRING  FullImageName, IN HANDLE  ProcessId, IN PIM
 	{
 		return;
 	}
-	DbgPrint("Image|ImageName:%wZ|Process ID:%d|ImageBase:%x|ImageSize:%d|ImageSignatureLevel:%d|ImageSignatureType:%d|SystemModeImage:%d\n",
-		FullImageName, ProcessId, ImageInfo->ImageBase, ImageInfo->ImageSize, ImageInfo->ImageSignatureLevel, ImageInfo->ImageSignatureType, ImageInfo->SystemModeImage);
-	//sprintf(outBuf, "Image|ImageName:%wZ|Process ID:%d|ImageBase:%x|ImageSize:%d|ImageSignatureLevel:%d|ImageSignatureType:%d|SystemModeImage:%d\n",
-	//	FullImageName, ProcessId, ImageInfo->ImageBase, ImageInfo->ImageSize, ImageInfo->ImageSignatureLevel, ImageInfo->ImageSignatureType, ImageInfo->SystemModeImage);
-	if (gpEventObject != NULL)
+	
+	if (CheckList.SHOWIMAGE)
 	{
-		KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
+		DbgPrint(       "Image|ImageName:%wZ|Process ID:%d|ImageBase:%x|ImageSize:%d|ImageSignatureLevel:%d|ImageSignatureType:%d|SystemModeImage:%d\n",FullImageName, ProcessId, ImageInfo->ImageBase, ImageInfo->ImageSize, ImageInfo->ImageSignatureLevel, ImageInfo->ImageSignatureType, ImageInfo->SystemModeImage);
+		sprintf(outBuf, "Image|ImageName:%wZ|Process ID:%d|ImageBase:%x|ImageSize:%d|ImageSignatureLevel:%d|ImageSignatureType:%d|SystemModeImage:%d\n",FullImageName, ProcessId, ImageInfo->ImageBase, ImageInfo->ImageSize, ImageInfo->ImageSignatureLevel, ImageInfo->ImageSignatureType, ImageInfo->SystemModeImage);
+		if (gpEventObject != NULL)
+		{
+			KeSetEvent((PRKEVENT)gpEventObject, 0, FALSE);
+		}
 	}
 }
 
