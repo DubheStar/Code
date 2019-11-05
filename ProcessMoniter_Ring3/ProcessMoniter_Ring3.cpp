@@ -65,7 +65,7 @@ int main()
 	CheckList.SHOWTHREAD = TRUE;
 	CheckList.SHOWEXITPROCESS = TRUE;
 	CheckList.SHOWEXITTHREAD = TRUE;
-	CheckList.SHOWIMAGE = FALSE;
+	CheckList.SHOWIMAGE = TRUE;
 	status = DeviceIoControl(hDevice,
 		IOCTL_PASSEVSTRUCT,
 		&CheckList,
